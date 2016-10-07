@@ -28,9 +28,9 @@ def read(path, params):
     r = requests.get(uri+path, headers=headers, params=params)
     return r.json()
     
-
-def getCompletedJobsPerf(start , end):
     
+def read_paginated(path, params, start, end):
+
     limit = 50
     
     if end - start + 1 < limit:
@@ -38,17 +38,28 @@ def getCompletedJobsPerf(start , end):
     
     position = start
     
-    
     while position <= end:
-        offset = position % limit
-        results = read("job", {'query':'' , 'info.pipeline':'mgrast-prod' , 'state':'completed', 'limit': limit , 'offset':offset})
+        offset = position
+        
+        params['limit'] = limit
+        params['offset'] = offset
+        results = read("job", params)
     
         for job in results['data']:
-            job_id = job['id']
-            #print(job_id)
-            perf = read("job/"+job_id, {'perf':''})
-            yield perf
+            yield job
             position += 1
+            
+
+def getCompletedJobsPerf(start , end):
+    
+    params = {'query':'' , 'info.pipeline':'mgrast-prod' , 'state':'completed'}
+    
+    for job in read_paginated("job", params, 0, 999):
+        job_id = job['id']
+        #print(job_id)
+        perf = read("job/"+job_id, {'perf':''})
+        yield perf
+
 
     
 
